@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<main>
+  <div
+    style="
+      flex-direction: column;
+      display: flex;
+      inset: 0px;
+      place-content: center;
+      align-items: center;
+      justify-content: center;
+    "
+  >
+    <form action="{{ url_for('index') }}">
+      <button
+        submit
+        class="navigateBack"
+        style="
+          background-color: black;
+          inset: 0px;
+          z-index: 30;
+          margin: auto;
+          width: 95%;
+          backdrop-filter: blur(2px);
+          border: none;
+        "
+      >
+        <img
+          class="object-fit: contain; width: 100%; height: 100%;"
+          src="{{ url_for('static', filename=image) }}"
+          alt="not working"
+        />
+      </button>
+    </form>
+    <div
+      class="actions"
+      style="
+        flex-direction: row;
+        display: flex;
+        place-content: center;
+        align-items: center;
+      "
+    >
+      <form action="{{ url_for('get_intensity', filename=image.replace('/', '?')) }}">
+        <button class="card" style="margin: 10px">
+          <h2>Intensity</h2>
+        </button>
+      </form>
+      <form action="{{ url_for('get_color_code', filename=image.replace('/', '?')) }}">
+        <button class="card" style="margin: 10px">
+          <h2>Color Code</h2>
+        </button>
+      </form>
+    </div>
+  </div>
+</main>
+{% endblock content %}

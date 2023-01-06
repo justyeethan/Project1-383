@@ -1,31 +1,18 @@
 {% extends 'base.html' %}
 {% block content %}
-  <div class="container">
-	  <h1>Showing: {{ image.split('/')[1] }}</h1>
-    <div class="row align-items-end">
-      <div class="col">
-	      <!-- Add Image tag-->
-       <a href="{{url_for('static', filename=image)}}" target="_blank" rel="noopener">
-	      <img src="{{url_for('static', filename=image)}}" alt="Image" />
-       </a>
-      </div>
-      <div class="col" style="padding: 5px; display: flex; place-content: center; align-items: center; margin: auto 0; flex-direction: column">
-        <!-- Colored raised button -->
-        <a href="{{url_for('static', filename=image)}}" target="_blank" rel="noopener">
-          <button
-            type="button"
-            class="btn btn-outline-danger btn-lg"
-            style="margin-bottom: 10px;"
-          >Preview Image</button>
+  <div class="center">
+    <h1>Content-Based Image Retrieval System</h1>
+    <h2>By Ethan Yee</h2>
+    <h4>CSS 484 | Wi</h4>
+  </div>
+  <div class="grid">
+    {% block changeOrder %}
+      {% for image in images %}
+        <a href="{{ url_for('show_image', image_name=image.split('/')[1] ) }}" class="card">
+          <img class="image" src="{{ url_for('static', filename=image) }}" alt="beep">
+          <span>{{image}}</span>
         </a>
-        <button type="button" class="btn btn-primary btn-lg" style="margin-bottom: 10px;">Color-Code</button>
-        <button type="button" class="btn btn-secondary btn-lg">Intensity</button>
-
-      </div>
-      <div class="col">
-        <h4>Results</h4>
-        {% block results %} {% endblock %}
-      </div>
-    </div>
+      {% endfor %}
+    {% endblock changeOrder %}
   </div>
 {% endblock %}

@@ -1,0 +1,7 @@
+{% extends 'index.html' %}
+
+{% block changeOrder %}
+<h1>Beep</h1>
+<h2>{{filename}}</h2>
+<img src="{{ url_for('static', filename=filename) }}" alt="file">
+{% endblock %}

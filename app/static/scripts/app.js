@@ -3,7 +3,7 @@
 (function() {
 	window.addEventListener('load', init);
 	function init() {
-		console.log('hello world');
+		// console.log('hello world');
 		let preview = document.getElementById('preview_image');
 	}
 	function previewImage(image) {
