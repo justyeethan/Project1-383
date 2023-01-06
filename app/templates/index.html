@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="container">
+	  <h1>Showing: {{ image.split('/')[1] }}</h1>
+    <div class="row align-items-end">
+      <div class="col">
+	      <!-- Add Image tag-->
+       <a href="{{url_for('static', filename=image)}}" target="_blank" rel="noopener">
+	      <img src="{{url_for('static', filename=image)}}" alt="Image" />
+       </a>
+      </div>
+      <div class="col" style="padding: 5px; display: flex; place-content: center; align-items: center; margin: auto 0; flex-direction: column">
+        <!-- Colored raised button -->
+        <a href="{{url_for('static', filename=image)}}" target="_blank" rel="noopener">
+          <button
+            type="button"
+            class="btn btn-outline-danger btn-lg"
+            style="margin-bottom: 10px;"
+          >Preview Image</button>
+        </a>
+        <button type="button" class="btn btn-primary btn-lg" style="margin-bottom: 10px;">Color-Code</button>
+        <button type="button" class="btn btn-secondary btn-lg">Intensity</button>
+
+      </div>
+      <div class="col">
+        <h4>Results</h4>
+        {% block results %} {% endblock %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
