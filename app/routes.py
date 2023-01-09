@@ -18,15 +18,15 @@ RES_PER_PAGE = 10
 @app.route('/index')
 def index():
     images = [f'images/{img}' for img in os.listdir('app/static/images')]
+    if not session.get('original_order'):
+        original_order = images
+        session['original_order'] = original_order # Sets the original order of all the images
     return render_template('index.html', images=images)
 
 
 @app.route('/show_image/<image_name>')
 def show_image(image_name):
-    images = [f'images/{img}' for img in os.listdir('app/static/images')]
-    original_order = images
-    session['original_order'] = original_order # Sets the original order of all the images
-    return render_template('show_image.html', images=images, image=f'images/{image_name}')
+    return render_template('show_image.html', image=f'images/{image_name}')
 
 
 @app.route('/intensity/<filename>')
@@ -35,11 +35,16 @@ def get_intensity(filename):
     Gets the intensity of the image
     Pass the order of the array using sessions, then sort
 
+    TODO
+    - Code for getting INTENSITY and ordering the images goes here!
+    - Create an indexable array of the images and their intensities, then save to sessions to save on compute time
+    - Place the ordered list of images in the session
+    - Sort the files based on the closest images to the current filename's intensity
+
     Args:
         filename (_type_): Filename of the image
     """
-    """ TODO Code for getting INTENSITY and ordering the images goes here!!!"""
-    """ Place the ordered list of images in the session """
+
     return redirect(url_for('results', filename=filename))
 
 
@@ -48,13 +53,13 @@ def get_color_code(filename):
     """
     Gets the intensity of the image
     Pass the order of the array using sessions, then sort
+    TODO
+    - Code for getting color code and ordering the images goes here!!!
+    - Place the ordered list of images in the session
 
     Args:
         filename (_type_): Filename of the image
     """
-    print(filename)
-    """ TODO Code for getting color code and ordering the images goes here!!!"""
-    """ Place the ordered list of images in the session """
     return redirect(url_for('results', filename=filename))
 
 
@@ -77,7 +82,15 @@ def results(filename):
     if images == []: # If there was an error with getting sessions data
         return redirect(url_for('index'))
     else:
-        return render_template('sorted.html', filename=filename)
+        # Parse through images rather than displaying by filename
+        return render_template('sorted.html', images_ordered=images)
+
+
+def encode(pixList):
+    CcBins = [0]*64
+    InBins = [0]*25
+    # TODO Encode the image
+    return CcBins, InBins
 
 
 
