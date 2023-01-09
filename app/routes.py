@@ -21,6 +21,8 @@ def index():
     if not session.get('original_order'):
         original_order = images
         session['original_order'] = original_order # Sets the original order of all the images
+    session['InBin'] = 0
+    session['CcBin'] = 0
     return render_template('index.html', images=images)
 
 
@@ -44,7 +46,9 @@ def get_intensity(filename):
     Args:
         filename (_type_): Filename of the image
     """
+    InBin = [0 for _ in range(25)] # Take the bins of each value, with each value being [0, 10], [10, 20], ...
 
+    print(InBin)
     return redirect(url_for('results', filename=filename))
 
 
@@ -60,6 +64,8 @@ def get_color_code(filename):
     Args:
         filename (_type_): Filename of the image
     """
+    CcBin = [0 for _ in range(64)]
+    print(CcBin)
     return redirect(url_for('results', filename=filename))
 
 
