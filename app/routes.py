@@ -4,25 +4,33 @@ import requests
 from flask import render_template, url_for, request, redirect, flash, send_file, session
 from flask_paginate import Pagination, get_page_args
 import math
-import logging
-logging.basicConfig(level=logging.DEBUG)
+from PIL import Image
+from collections import defaultdict
 
 # from Image import convert_to_binary
-
-
-# Constants
-RES_PER_PAGE = 10
 
 
 @app.route('/')
 @app.route('/index')
 def index():
+    # app.secret_key = os.urandom(32) # TESTING ONLY TODO DELETE THIS LINE OF CODE
     images = [f'images/{img}' for img in os.listdir('app/static/images')]
+    imageList = defaultdict(list) # key: image_name { value: [intensity, colorCode] }
     if not session.get('original_order'):
         original_order = images
         session['original_order'] = original_order # Sets the original order of all the images
-    session['InBin'] = 0
-    session['CcBin'] = 0
+    # Gets the image list + all of the intensity and Cc values
+    if session.get('imageList'):
+        print('list not in session')
+        for image in os.listdir('app/static/images'):
+            imagePath = f'app/static/images/{image}'
+            im = Image.open(imagePath)
+            CcBin, InBin = encode(im.getdata())
+            imageList[image] = [InBin, CcBin]
+        session['imageList'] = imageList # Incodes values to sessions
+    else:
+        # print(session['imageList'])
+        ...
     return render_template('index.html', images=images)
 
 
@@ -46,9 +54,12 @@ def get_intensity(filename):
     Args:
         filename (_type_): Filename of the image
     """
-    InBin = [0 for _ in range(25)] # Take the bins of each value, with each value being [0, 10], [10, 20], ...
+    # print(session.get('imageList'))
+    # print(f'will this work? image {filename}', session.get('imageList')[filename.split('?')[1]])
+    targetIntensity = session.get('imageList')[filename.split('?')[1]][0]
+    print(filename, targetIntensity)
+    sortedList = []
 
-    print(InBin)
     return redirect(url_for('results', filename=filename))
 
 
@@ -64,8 +75,8 @@ def get_color_code(filename):
     Args:
         filename (_type_): Filename of the image
     """
-    CcBin = [0 for _ in range(64)]
-    print(CcBin)
+    targetColorCode = session.get('imageList')[filename.split('?')[1]][1]
+    print(filename, targetColorCode)
     return redirect(url_for('results', filename=filename))
 
 
@@ -83,57 +94,34 @@ def results(filename):
     print('this was "sorted"!')
     print(filename)
     filename = filename.replace('?', '/')
-    images = session.get('images', [])
     print(session.get('original_order'))
-    if images == []: # If there was an error with getting sessions data
-        return redirect(url_for('index'))
-    else:
-        # Parse through images rather than displaying by filename
-        return render_template('sorted.html', images_ordered=images)
+    return render_template('sorted.html', images_ordered=[])
 
 
 def encode(pixList):
     CcBins = [0]*64
     InBins = [0]*25
     # TODO Encode the image
+    pixList = list(pixList)
+    # print(pixList[0])
+    for pix in pixList:
+        # Intensity
+        intensity = (0.2999*pix[0]) + (0.587*pix[1]) + (0.114*pix[2]) # Intensity = 0.2999R + 0.587G + 0.114B
+        # print(f'{pix}: {intensity}')
+        # print(intensity, int((intensity // 10) % 25) + 1)
+        InBins[int((intensity // 10) % 25)] += 1 # Increments bin[int((intensity // 10) % 25)] inside of the bin
+
+        # Color code
+        # print(_convert_to_binary(pix[0]), _convert_to_binary(pix[1]), _convert_to_binary(pix[2]))
+        six_digit_code = str(_convert_to_binary(pix[0]))[:2] + str(_convert_to_binary(pix[1]))[:2] + str(_convert_to_binary(pix[2]))[:2]
+        # print(int(six_digit_code, 2))
+        CcBins[int(six_digit_code, 2)] += 1
+
+    # print(InBins)
+    # print(CcBins)
     return CcBins, InBins
 
 
-
-
-# -------------- API ----------------
-
-
-@app.route('/get_image/<image_name>')
-def getImage(image_name):
-    # request.headers["content-type"] = "image/png"
-    files = os.listdir('app/static/images')
-    if image_name in files:
-        return send_file(f'static/images/{image_name}', 'image/png')
-    else:
-        return "Image not found", 404
-
-
-@app.route('/get_image/<image_name>/binary')
-def getImageBinary(image_name):
-    """ TODO in part 2
-    Gets the Binary of the image
-
-    Args:
-        image_name (_type_): _description_
-    """
-    ...
-
-
-@app.route('/get_image/all')
-def getAllImages():
-    """
-    Gets all the images names
-    You can pull the images after that
-    """
-    ...
-
-
 # Helper Functions for simplicity
-def _convert_to_binary(self, num):
-    return bin(n).replace("0b", "")
+def _convert_to_binary(num):
+    return bin(num).replace("0b", "")
