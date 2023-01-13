@@ -252,7 +252,12 @@ a {
   transition: background 200ms, border 200ms;
 }
 
-.card span {
+.card img {
+  width: 300px;
+  height: 200px;
+}
+
+.card h4 {
   display: inline-block;
   transition: transform 200ms;
 }
@@ -358,7 +363,7 @@ a {
     border: 1px solid rgba(var(--card-border-rgb), 0.15);
   }
 
-  .card:hover span {
+  .card:hover h4 {
     transform: translateX(4px);
   }
 }
@@ -368,7 +373,7 @@ a {
     animation: none;
   }
 
-  .card:hover span {
+  .card:hover h4 {
     transform: none;
   }
 }

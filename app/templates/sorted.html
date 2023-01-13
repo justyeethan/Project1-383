@@ -6,7 +6,7 @@
       class="card"
     >
       <img class="image" src="{{ url_for('static', filename=image) }}" alt="beep" />
-      <span>{{image}}</span>
+      <h4 title="title is-4">{{image.split('/')[1]}}</h4>
     </a>
   {% endfor %}
 {% endblock %}
