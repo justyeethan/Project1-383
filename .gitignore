@@ -1,6 +1,6 @@
-venv/*
+venv/
 .flaskenv
 .DS_Store
-__pycache__/*
-app/__pycache__/*
-/flask_session/*
+__pycache__/
+app/__pycache__/
+/flask_session/
