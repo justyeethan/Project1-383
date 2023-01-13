@@ -23,7 +23,7 @@ def index():
     per_page = 20
     offset = (page - 1) * per_page
     pagination_images = get_page_image(offset=offset, per_page=per_page)
-    pagination = Pagination(page=page, per_page=per_page, total=len(images), css_framework='bootstrap5')
+    pagination = Pagination(page=page, per_page=per_page, total=len(images), css_framework='bulma')
 
     imageList = defaultdict(list)
     if not session.get('original_order'):
@@ -142,7 +142,7 @@ def results(filename):
     per_page = 20
     offset = (page - 1) * per_page
     pagination_images = get_page_image(offset=offset, per_page=per_page)
-    pagination = Pagination(page=page, per_page=per_page, total=len(final_list), css_framework='bootstrap5')
+    pagination = Pagination(page=page, per_page=per_page, total=len(final_list), css_framework='bulma')
     return render_template('sorted.html', images=pagination_images, page=page, per_page=20, pagination=pagination)
 
 
