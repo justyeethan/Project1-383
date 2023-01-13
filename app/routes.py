@@ -24,7 +24,6 @@ def index():
     if not session.get('imageList'):
         print('list not in session')
         for image in os.listdir('app/static/images'):
-            print(image)
             imagePath = f'app/static/images/{image}'
             im = Image.open(imagePath)
             pixels = list(im.getdata())
@@ -40,9 +39,7 @@ def index():
                 # 'size': width * height
             }
         session['imageList'] = imageList  # Incodes values to sessions
-    else:
-        # print(session['imageList'])
-        ...
+    print(session.get('imageList')['1.jpg'])
     return render_template('index.html', images=images)
 
 
@@ -126,7 +123,7 @@ def results(filename):
     if session.get('sortedList') == []:
         return redirect(url_for('index'))
     final_list = session.get('sortedList')
-    print(final_list)
+    # print(final_list)
     final_list = [f'images/{img[1]}' for img in final_list]
     return render_template('sorted.html', images=final_list)
 
@@ -148,10 +145,10 @@ def encode(pixList):
     # TODO Encode the image
     pixList = list(pixList)
     for pix in pixList:
-        print(pix)
+        # print(pix)
         # Intensity
-        # Intensity = 0.2999R + 0.587G + 0.114B
-        intensity = (0.2999*pix[0]) + (0.587*pix[1]) + (0.114*pix[2])
+        # Intensity = 0.299R + 0.587G + 0.114B
+        intensity = (0.299*pix[0]) + (0.587*pix[1]) + (0.114*pix[2])
         # Increments bin[int((intensity // 10) % 25)] inside of the bin
         if intensity < 250:
             InBins[int((intensity // 10))] += 1
@@ -162,14 +159,14 @@ def encode(pixList):
         # Color code converts rgb value to binary
         v1, v2, v3 = _convert_to_binary(pix[0]), _convert_to_binary(
             pix[1]), _convert_to_binary(pix[2])
-        print(v1, v2, v3)
+        # print(v1, v2, v3)
         # Converts to 6 digit binary, ensuring that the change isn't transparent from the value
-        v1, v2, v3 = v1.rjust((2-len(v1)) + len(v1), '0')[:2], v2.rjust(
-            (2-len(v2)) + len(v2), '0')[:2], v3.rjust((2-len(v3)) + len(v3), '0')[:2]
+        v1, v2, v3 = v1.rjust((8-len(v1)) + len(v1), '0')[:2], v2.rjust(
+            (8-len(v2)) + len(v2), '0')[:2], v3.rjust((8-len(v3)) + len(v3), '0')[:2]
         six_digit_code = str(v1) + str(v2) + str(v3)
         # six_digit_code = v1[:2] + v2[:2] + v3[:2]
         # print(v1, v2, v3)
-        print(six_digit_code)
+        # print(six_digit_code)
         # Convert binary to decimal, then increment the bin based on the decimal
         CcBins[int(six_digit_code, 2)] += 1
 
