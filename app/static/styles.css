@@ -6,6 +6,9 @@
   }
 }
 
+.title, span, .pagination-link {
+  color: white
+}
 :root {
   --max-width: 1100px;
   --border-radius: 12px;
