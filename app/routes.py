@@ -4,17 +4,27 @@ from flask import render_template, url_for, request, redirect, flash, send_file,
 import numpy as np
 from PIL import Image
 from collections import defaultdict
+from flask_paginate import Pagination, get_page_args
 
 # TESTING ONLY TODO DELETE THIS LINE OF CODE
 app.secret_key = os.urandom(32)
 np.set_printoptions(threshold=np.inf)
 
-
 @app.route('/')
 @app.route('/index')
 def index():
     images = [f'images/{img}' for img in os.listdir('app/static/images')]
-    # key: image_name { value: [intensity, colorCode] }
+
+    # Pagination
+    def get_page_image(offset=0, per_page=20):
+        return images[offset: offset + per_page]
+    # page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+    page = int(request.args.get('page', 1))
+    per_page = 20
+    offset = (page - 1) * per_page
+    pagination_images = get_page_image(offset=offset, per_page=per_page)
+    pagination = Pagination(page=page, per_page=per_page, total=len(images), css_framework='bootstrap5')
+
     imageList = defaultdict(list)
     if not session.get('original_order'):
         original_order = images
@@ -40,7 +50,7 @@ def index():
             }
         session['imageList'] = imageList  # Incodes values to sessions
     print(session.get('imageList')['1.jpg'])
-    return render_template('index.html', images=images)
+    return render_template('index.html', images=pagination_images, page=page, per_page=20, pagination=pagination)
 
 
 @app.route('/show_image/<image_name>')
@@ -125,7 +135,15 @@ def results(filename):
     final_list = session.get('sortedList')
     # print(final_list)
     final_list = [f'images/{img[1]}' for img in final_list]
-    return render_template('sorted.html', images=final_list)
+    # Pagination
+    def get_page_image(offset=0, per_page=20):
+        return final_list[offset: offset + per_page]
+    page = int(request.args.get('page', 1))
+    per_page = 20
+    offset = (page - 1) * per_page
+    pagination_images = get_page_image(offset=offset, per_page=per_page)
+    pagination = Pagination(page=page, per_page=per_page, total=len(final_list), css_framework='bootstrap5')
+    return render_template('sorted.html', images=pagination_images, page=page, per_page=20, pagination=pagination)
 
 
 def encode(pixList):
