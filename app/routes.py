@@ -1,18 +1,25 @@
 from app import app
 import os
-from flask import render_template, url_for, request, redirect, flash, send_file, session
-import numpy as np
+from flask import render_template, url_for, request, redirect, session
 from PIL import Image
 from collections import defaultdict
-from flask_paginate import Pagination, get_page_args
+from flask_paginate import Pagination
 
-# TESTING ONLY TODO DELETE THIS LINE OF CODE
-app.secret_key = os.urandom(32)
-np.set_printoptions(threshold=np.inf)
+# NOTE TESTING ONLY if you want to refresh your session constantly
+# app.secret_key = os.urandom(32)
+# np.set_printoptions(threshold=np.inf)
 
 @app.route('/')
 @app.route('/index')
 def index():
+    """The index page of the app.
+    This page will show all the images in the folder, and it will also do the binning of the images and feature extraction.
+    The reason why it will render so slowly if you run it manually, is that it will be looping through all the images and the individual pixels in each image.
+    After that, it caches it into local storage. Make sure you don't change the SECRET_KEY, or else it will reset the cache, unless that's what you're trying to do.
+
+    Returns:
+        render_template (_type__): HTML template of the index page
+    """
     images = [f'images/{img}' for img in os.listdir('app/static/images')]
 
     # Pagination
@@ -32,29 +39,36 @@ def index():
         session['original_order'] = original_order
     # Gets the image list + all of the intensity and Cc values
     if not session.get('imageList'):
-        print('list not in session')
+        # Loops through all the images in the folder
         for image in os.listdir('app/static/images'):
+            # Gets relative image path
             imagePath = f'app/static/images/{image}'
+            # Opens the image using PIL
             im = Image.open(imagePath)
+            # Grabs the individual RGB Pixel data
             pixels = list(im.getdata())
-            width, height = im.size
-            # print(width * height)
-            # pixels = np.array([pixels[i * width:(i + 1) * width] for i in range(height)])
-            # print(pixels)
+            # Encode all of the pixels into bins called CcBin and InBin
             CcBin, InBin = encode(pixels)
             imageList[image] = {
                 'bins': [InBin, CcBin],  # Get the bins for the image
                 # Get number of pixels in an image
                 'size': len(pixels)
-                # 'size': width * height
             }
-        session['imageList'] = imageList  # Incodes values to sessions
-    print(session.get('imageList')['1.jpg'])
+        session['imageList'] = imageList  # Saves bins to sessions
+    # print(session.get('imageList')['1.jpg']) # Testing. if you wanna see 1.jpg's features, uncomment this out
     return render_template('index.html', images=pagination_images, page=page, per_page=20, pagination=pagination)
 
 
 @app.route('/show_image/<image_name>')
 def show_image(image_name):
+    """Shows the image in its own page
+
+    Args:
+        image_name (_type_): The image name
+
+    Returns:
+        template (_type_): HTML template of the image page
+    """
     return render_template('show_image.html', image=f'images/{image_name}')
 
 
@@ -64,12 +78,6 @@ def get_intensity(filename):
     Gets the intensity of the image
     Pass the order of the array using sessions, then sort
 
-    TODO
-    - Code for getting INTENSITY and ordering the images goes here!
-    - Create an indexable array of the images and their intensities, then save to sessions to save on compute time
-    - Place the ordered list of images in the session
-    - Sort the files based on the closest images to the current filename's intensity
-
     Args:
         filename (_type_): Filename of the image
     """
@@ -77,13 +85,13 @@ def get_intensity(filename):
     # print(f'will this work? image {filename}', session.get('imageList')[filename.split('?')[1]])
     target_image = filename.split('?')[1]  # Target Image fully parsed from URL
     sortedList = []
-    # TODO Use Manhatten distance to sort the images based on Intensity
+    # Use Manhatten distance to sort the images based on Intensity
     for image in session.get('imageList').keys():
         get_distance = manhattanDistance(target_image, image, 'I')
         # Append the image and the distance of the image compared to the target_image
         sortedList.append((get_distance, image))
+    # Sort the list based on the intensity
     sortedList = sorted(sortedList, key=lambda x: x[0])
-    print(sortedList)
     session['sortedList'] = sortedList
 
     return redirect(url_for('results', filename=filename))
@@ -94,23 +102,19 @@ def get_color_code(filename):
     """
     Gets the intensity of the image
     Pass the order of the array using sessions, then sort
-    TODO
-    - Code for getting color code and ordering the images goes here!!!
-    - Place the ordered list of images in the session
 
     Args:
         filename (_type_): Filename of the image
     """
     target_image = filename.split('?')[1]  # Target Image fully parsed from URL
-    # print(filename, targetColorCode)
     sortedList = []
-    # TODO Use Manhatten distance to sort the images based on CC
+    # Use Manhatten distance to sort the images based on CC
     for image in session.get('imageList').keys():
         get_distance = manhattanDistance(target_image, image, 'CC')
         # Append the image and the distance of the image compared to the target_image
         sortedList.append((get_distance, image))
+    # Sort the list based on the Color code
     sortedList = sorted(sortedList, key=lambda x: x[0])
-    # print(sortedList)
     session['sortedList'] = sortedList
     return redirect(url_for('results', filename=filename))
 
@@ -126,16 +130,13 @@ def results(filename):
     Returns:
         _type_: The template that orders the images
     """
-    # print('this was "sorted"!')
-    # print(filename)
     filename = filename.replace('?', '/')
-    # print(session.get('original_order'))
     if session.get('sortedList') == []:
         return redirect(url_for('index'))
+    # Grabs the sorted list values from the session
     final_list = session.get('sortedList')
-    # print(final_list)
     final_list = [f'images/{img[1]}' for img in final_list]
-    # Pagination
+    # Pagination support for results page
     def get_page_image(offset=0, per_page=20):
         return final_list[offset: offset + per_page]
     page = int(request.args.get('page', 1))
@@ -160,12 +161,10 @@ def encode(pixList):
     """
     CcBins = [0]*64
     InBins = [0]*25
-    # TODO Encode the image
+    # Encode the image
     pixList = list(pixList)
     for pix in pixList:
-        # print(pix)
-        # Intensity
-        # Intensity = 0.299R + 0.587G + 0.114B
+        # Find the Intensity
         intensity = (0.299*pix[0]) + (0.587*pix[1]) + (0.114*pix[2])
         # Increments bin[int((intensity // 10) % 25)] inside of the bin
         if intensity < 250:
@@ -177,14 +176,10 @@ def encode(pixList):
         # Color code converts rgb value to binary
         v1, v2, v3 = _convert_to_binary(pix[0]), _convert_to_binary(
             pix[1]), _convert_to_binary(pix[2])
-        # print(v1, v2, v3)
         # Converts to 6 digit binary, ensuring that the change isn't transparent from the value
         v1, v2, v3 = v1.rjust((8-len(v1)) + len(v1), '0')[:2], v2.rjust(
             (8-len(v2)) + len(v2), '0')[:2], v3.rjust((8-len(v3)) + len(v3), '0')[:2]
         six_digit_code = str(v1) + str(v2) + str(v3)
-        # six_digit_code = v1[:2] + v2[:2] + v3[:2]
-        # print(v1, v2, v3)
-        # print(six_digit_code)
         # Convert binary to decimal, then increment the bin based on the decimal
         CcBins[int(six_digit_code, 2)] += 1
 
@@ -213,17 +208,14 @@ def manhattanDistance(target, image, type):
         target_bin = session.get('imageList')[target]['bins'][0]
         image_bin = session.get('imageList')[image]['bins'][0]
         # Loop through the different bins of both the target and image that is being compared
-        # for i in range(len(target_bin)):
-        #     distance += abs(((target_bin[i]) / (target_size)
-        #                      ) - (image_bin[i] / (image_size)))
     # Handles Color Code values
     elif type == 'CC':
         # Gets the color code bin for the target image
         target_bin = session.get('imageList')[target]['bins'][1]
         image_bin = session.get('imageList')[image]['bins'][1]
-        # Loops through all the binned proportions and calculates using Manhattan distance
     else:  # Error
         return -1
+    # Loops through all the binned proportions and calculates using Manhattan distance
     for i in range(len(target_bin)):
         distance += abs(((target_bin[i]) / (target_size)
                          ) - (image_bin[i] / (image_size)))

@@ -1,5 +1,6 @@
 {% extends 'index.html' %}
 {% block changeOrder %}
+  <!-- Loops through images -->
   {% for image in images %}
     <a
       href="{{ url_for('show_image', image_name=image.split('/')[1] ) }}"

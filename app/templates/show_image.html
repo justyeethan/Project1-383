@@ -43,11 +43,13 @@
       "
     >
       <form action="{{ url_for('get_intensity', filename=image.replace('/', '?')) }}">
+        <!-- Handles button click for getting the intensity -->
         <button class="card" style="margin: 10px; margin: 0">
           <h4 class="title is-4">Intensity</h4>
         </button>
       </form>
       <form action="{{ url_for('get_color_code', filename=image.replace('/', '?')) }}">
+        <!-- Handles the button click for getting CC -->
         <button class="card" style="margin: 10px; margin: 0">
           <h4 class="title is-4">Color Code</h4>
         </button>

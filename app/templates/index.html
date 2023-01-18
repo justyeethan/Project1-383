@@ -7,6 +7,7 @@
   </div>
   <div class="grid">
     {% block changeOrder %}
+      <!-- Loops through all the images inside of the order -->
       {% for image in images %}
         <a href="{{ url_for('show_image', image_name=image.split('/')[1] ) }}" class="card">
           <img class="image" src="{{ url_for('static', filename=image) }}" alt="beep">
@@ -15,6 +16,7 @@
       {% endfor %}
     {% endblock changeOrder %}
   </div>
+  <!-- Pagination links -->
   <div class="center" style="display: flex; margin-top: 2rem;">
     {{pagination.links}}
   </div>
