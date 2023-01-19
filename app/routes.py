@@ -47,6 +47,8 @@ def index():
             im = Image.open(imagePath)
             # Grabs the individual RGB Pixel data
             pixels = list(im.getdata())
+            print(image)
+            print(len(pixels))
             # Encode all of the pixels into bins called CcBin and InBin
             CcBin, InBin = encode(pixels)
             imageList[image] = {

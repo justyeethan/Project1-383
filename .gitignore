@@ -1,6 +1,10 @@
 venv/
 .flaskenv
 .DS_Store
-__pycache__/
+*/__pycache__/*
 app/__pycache__/
-/flask_session/
+*/flask_session/*
+*.zip
+*.docx
+*.pdf
+flask_session/
