@@ -10,6 +10,7 @@ Styling the app.
 }
 
 .title, span, .pagination-link {
+  text-align: center;
   color: white
 }
 :root {
@@ -276,6 +277,10 @@ a {
   font-size: 0.9rem;
   line-height: 1.5;
   max-width: 30ch;
+}
+
+.card input {
+  display: flex;
 }
 
 .center {

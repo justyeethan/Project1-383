@@ -5,6 +5,10 @@
     <h2 class="title is-3">By Ethan Yee</h2>
     <h4 class="title is-4">CSS 484 | Wi</h4>
   </div>
+  <!-- Pagination links -->
+  {% block heading %}
+  {{pagination.links}}
+  {% endblock %}
   <div class="grid">
     {% block changeOrder %}
       <!-- Loops through all the images inside of the order -->
@@ -17,7 +21,5 @@
     {% endblock changeOrder %}
   </div>
   <!-- Pagination links -->
-  <div class="center" style="display: flex; margin-top: 2rem;">
-    {{pagination.links}}
-  </div>
+  {{pagination.links}}
 {% endblock %}

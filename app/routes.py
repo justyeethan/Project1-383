@@ -4,10 +4,13 @@ from flask import render_template, url_for, request, redirect, session
 from PIL import Image
 from collections import defaultdict
 from flask_paginate import Pagination
+import numpy as np
+import math
 
 # NOTE TESTING ONLY if you want to refresh your session constantly
-# app.secret_key = os.urandom(32)
-# np.set_printoptions(threshold=np.inf)
+app.secret_key = os.urandom(32)
+np.set_printoptions(threshold=np.inf)
+
 
 @app.route('/')
 @app.route('/index')
@@ -30,13 +33,12 @@ def index():
     per_page = 20
     offset = (page - 1) * per_page
     pagination_images = get_page_image(offset=offset, per_page=per_page)
-    pagination = Pagination(page=page, per_page=per_page, total=len(images), css_framework='bulma')
+    pagination = Pagination(page=page, per_page=per_page,
+                            total=len(images), css_framework='bulma')
 
     imageList = defaultdict(list)
-    if not session.get('original_order'):
-        original_order = images
-        # Sets the original order of all the images
-        session['original_order'] = original_order
+    # Store which images are checked for relevance
+    session['relevance_images'] = []
     # Gets the image list + all of the intensity and Cc values
     if not session.get('imageList'):
         # Loops through all the images in the folder
@@ -47,18 +49,50 @@ def index():
             im = Image.open(imagePath)
             # Grabs the individual RGB Pixel data
             pixels = list(im.getdata())
-            print(image)
-            print(len(pixels))
             # Encode all of the pixels into bins called CcBin and InBin
             CcBin, InBin = encode(pixels)
+            size = len(pixels)
+            relBins = set_features(CcBin, InBin, size)  # Relevance bins
             imageList[image] = {
-                'bins': [InBin, CcBin],  # Get the bins for the image
+                'bins': [InBin, CcBin, relBins],  # Get the bins for the image
                 # Get number of pixels in an image
-                'size': len(pixels)
+                'size': size
             }
         session['imageList'] = imageList  # Saves bins to sessions
-    # print(session.get('imageList')['1.jpg']) # Testing. if you wanna see 1.jpg's features, uncomment this out
-    return render_template('index.html', images=pagination_images, page=page, per_page=20, pagination=pagination)
+    avg_matrix = [0 for _ in range(89)]
+    std_matrix = [0 for _ in range(89)]
+    # Loops through all the features inside the image
+    for i in range(89):
+        # Loops through all the images to extract features[i] from the image, then places it in an array
+        arr = [session.get('imageList')[image]['bins'][2][i]
+               for image in session.get('imageList').keys()]
+        # Calculates the average of the array
+        avg_matrix[i] = sum(arr) / len(arr)
+        # Calculates the standard deviation of the array
+        std_matrix[i] = np.std(arr)
+    # print(avg_matrix)
+    # print(std_matrix[0:10])
+    features = defaultdict(list)
+    for image in session.get('imageList').keys():
+        for i in range(len(avg_matrix)):
+            val = 0
+            if std_matrix[i] == 0:
+                # Check Special Case, if the standard deviation is 0, then set val to 0
+                val = 0
+            else:
+                # Calculate normalized feature matrix
+                val = (session.get('imageList')[
+                       image]['bins'][2][i] - avg_matrix[i]) / std_matrix[i]
+            # Append value to features[image] to construct normalized Feature
+            features[image].append(val)
+    session['normalized_features'] = features
+    # print(features['2.jpg'])
+    return render_template(
+        'index.html',
+        images=pagination_images,
+        page=page, per_page=20,
+        pagination=pagination
+    )
 
 
 @app.route('/show_image/<image_name>')
@@ -71,6 +105,7 @@ def show_image(image_name):
     Returns:
         template (_type_): HTML template of the image page
     """
+    print(session.get('imageList')[image_name]['bins'][0])
     return render_template('show_image.html', image=f'images/{image_name}')
 
 
@@ -135,9 +170,15 @@ def results(filename):
     filename = filename.replace('?', '/')
     if session.get('sortedList') == []:
         return redirect(url_for('index'))
+    if session.get('relevance_images'):
+        # TODO Manipulate weight edges
+        print(session.get('relevance_images', 0))
+        # for compared_image in session.get('relevance_images').keys():
+            # ...
     # Grabs the sorted list values from the session
     final_list = session.get('sortedList')
     final_list = [f'images/{img[1]}' for img in final_list]
+
     # Pagination support for results page
     def get_page_image(offset=0, per_page=20):
         return final_list[offset: offset + per_page]
@@ -145,8 +186,71 @@ def results(filename):
     per_page = 20
     offset = (page - 1) * per_page
     pagination_images = get_page_image(offset=offset, per_page=per_page)
-    pagination = Pagination(page=page, per_page=per_page, total=len(final_list), css_framework='bulma')
-    return render_template('sorted.html', images=pagination_images, page=page, per_page=20, pagination=pagination)
+    pagination = Pagination(page=page, per_page=per_page,
+                            total=len(final_list), css_framework='bulma')
+
+    return render_template(
+        'sorted.html',
+        target=filename.split('/')[1],
+        images=pagination_images,
+        page=page, per_page=20,
+        pagination=pagination
+    )
+
+
+@app.route('/get_check_status')
+def get_check_status():
+    """
+    Returns the total list of images that are checked currently
+    """
+    return session.get('relevance_images')
+
+
+@app.route('/add_relevance/<image>')
+def add_relevance(image):
+    """ Adds the relevance image to the layer
+
+    Args:
+        image String: String of the image filename
+
+    Returns:
+        Json: Json of the relevance of the image
+    """
+    if image not in session.get('relevance_images'):
+        session['relevance_images'].append(image)
+    else:
+        return {'status': 'image is already in relevance'}
+    print(image + " added to relevance")
+    return {'relevance': session.get('imageList')[image]}  # TODO Placeholder
+
+
+@app.route('/remove_relevance/<image>')
+def remove_relevance(image):
+    """Removes relevenace image from the layer
+
+    Args:
+        image (string): The image name
+
+    Returns:
+        JSON: The status response
+    """
+    if image not in session.get('relevance_images'):
+        return {'status': 'image not in relevance'}
+    session['relevance_images'].remove(image)
+    print(image + " removed to relevance")
+    return {'status': 'removed successfully'}  # TODO Placeholder
+
+
+@app.route('/clear_relevance/<filename>')
+def clear_relevance(filename):
+    """Clears all relevance images from the session
+
+    Returns:
+        JSON: The status response
+    """
+    session['relevance_images'] = []
+    print('cleared relevance_images', session.get('relevance_images'))
+    return redirect(url_for('results', filename=filename))
 
 
 def encode(pixList):
@@ -224,6 +328,49 @@ def manhattanDistance(target, image, type):
     return distance
 
 
+def calculate_relevance(target, image):
+    """
+    Calculates the relevance of the image
+
+    Args:
+        target (_type_): The target image filename
+        image (_type_): The image to be compared to the target filename
+
+    Returns:
+        _type_: The relevance of the image
+    TODO This will calculate teh relevance of the image using the standard devation of the image, Gaussian normalization
+    """
+    relevance = 0
+    image_features = session.get('normalized_features')[target]
+    target_features = session.get('normalized_features')[target]
+    print(target)
+    print(target_features)
+    print(image)
+    print(image_features)
+    # Gets the manhattan distance between the target and the image
+    return relevance
+    # Gets the manhattan distance between the target and the image
+
+
+def set_features(CcBin, Inbin, imSize):
+    """Bins the CcBins and InBins for the image to get normalized values
+
+    Args:
+        CcBin (_type_): _description_
+        Inbin (_type_): _description_
+        imSize (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    featureA = [x/imSize for x in CcBin]  # Gets Feature A
+    featureB = [x/imSize for x in Inbin]  # Gets Feature B
+    # feature_matrix = featureA + featureB
+    feature_matrix = featureB + featureA
+    return feature_matrix
+
 # Helper Functions for simplicity
+
+
 def _convert_to_binary(num):
     return bin(num).replace("0b", "")
