@@ -35,7 +35,6 @@ def index():
     pagination_images = get_page_image(offset=offset, per_page=per_page)
     pagination = Pagination(page=page, per_page=per_page,
                             total=len(images), css_framework='bulma')
-
     imageList = defaultdict(list)
     # Store which images are checked for relevance
     session['relevance_images'] = []
@@ -59,6 +58,8 @@ def index():
                 'size': size
             }
         session['imageList'] = imageList  # Saves bins to sessions
+    # Clears selected relevance Images
+    session['relevance_images'] = []
     avg_matrix = [0 for _ in range(89)]
     std_matrix = [0 for _ in range(89)]
     # Loops through all the features inside the image
@@ -70,23 +71,20 @@ def index():
         avg_matrix[i] = sum(arr) / len(arr)
         # Calculates the standard deviation of the array
         std_matrix[i] = np.std(arr)
-    # print(avg_matrix)
+    # print(avg_matrix[0:10])
     # print(std_matrix[0:10])
     features = defaultdict(list)
     for image in session.get('imageList').keys():
         for i in range(len(avg_matrix)):
             val = 0
-            if std_matrix[i] == 0:
-                # Check Special Case, if the standard deviation is 0, then set val to 0
-                val = 0
-            else:
-                # Calculate normalized feature matrix
+            # Check Special Case, if the standard deviation is 0, then set val to 0
+            if std_matrix[i] != 0:
+                # Calculate normalized feature matrix if not 0
                 val = (session.get('imageList')[
                        image]['bins'][2][i] - avg_matrix[i]) / std_matrix[i]
             # Append value to features[image] to construct normalized Feature
             features[image].append(val)
     session['normalized_features'] = features
-    # print(features['2.jpg'])
     return render_template(
         'index.html',
         images=pagination_images,
@@ -170,11 +168,6 @@ def results(filename):
     filename = filename.replace('?', '/')
     if session.get('sortedList') == []:
         return redirect(url_for('index'))
-    if session.get('relevance_images'):
-        # TODO Manipulate weight edges
-        print(session.get('relevance_images', 0))
-        # for compared_image in session.get('relevance_images').keys():
-            # ...
     # Grabs the sorted list values from the session
     final_list = session.get('sortedList')
     final_list = [f'images/{img[1]}' for img in final_list]
@@ -204,6 +197,43 @@ def get_check_status():
     Returns the total list of images that are checked currently
     """
     return session.get('relevance_images')
+
+
+@app.route('/get_relevance_feedback/<filename>')
+def get_relevance_feedback(filename):
+    """
+    Returns the route for relevance feedback
+    Args:
+        image (String): String name of image
+    Returns:
+        rf.html (HTML): HTML template for relevance feedback
+    """
+    filename = filename.replace('?', '/')
+    # relevance_images = session.get('relevance_images', None)
+    # weight = 0
+    # if relevance_images is not None:
+    #     # print('in relevance', session.get('relevance_images'))
+    #     weight = update_weight(relevance_images)
+    #     print(weight)
+    # else:
+    #     weight = [1/7 for _ in range(89)]
+    res = calculate_relevance(filename.split('/')[1], [1/7 for _ in range(89)]) # target, weight
+    final_list = [f'images/{img[0]}' for img in sorted(res, key=lambda x: x[1])]
+    def get_page_image(offset=0, per_page=20):
+        return final_list[offset: offset + per_page]
+    page = int(request.args.get('page', 1))
+    per_page = 20
+    offset = (page - 1) * per_page
+    pagination_images = get_page_image(offset=offset, per_page=per_page)
+    pagination = Pagination(page=page, per_page=per_page,
+                            total=len(final_list), css_framework='bulma')
+    return render_template(
+        'rf.html',
+        target=filename.split('/')[1],
+        images=pagination_images,
+        page=page, per_page=20,
+        pagination=pagination
+    )
 
 
 @app.route('/add_relevance/<image>')
@@ -249,8 +279,7 @@ def clear_relevance(filename):
         JSON: The status response
     """
     session['relevance_images'] = []
-    print('cleared relevance_images', session.get('relevance_images'))
-    return redirect(url_for('results', filename=filename))
+    return redirect(url_for('get_relevance_feedback', filename=filename))
 
 
 def encode(pixList):
@@ -328,9 +357,9 @@ def manhattanDistance(target, image, type):
     return distance
 
 
-def calculate_relevance(target, image):
+def calculate_relevance(target, weights):
     """
-    Calculates the relevance of the image
+    Calculates the relevance weights of the image(s) depending on which images were selected on the frontend
 
     Args:
         target (_type_): The target image filename
@@ -340,16 +369,48 @@ def calculate_relevance(target, image):
         _type_: The relevance of the image
     TODO This will calculate teh relevance of the image using the standard devation of the image, Gaussian normalization
     """
-    relevance = 0
-    image_features = session.get('normalized_features')[target]
-    target_features = session.get('normalized_features')[target]
-    print(target)
-    print(target_features)
-    print(image)
-    print(image_features)
+    relevance = []
+    norm_features = session.get('normalized_features')
+    images = norm_features.keys()
+    # print(norm_features)
+    for image in norm_features.keys():
+        summed = (sum(weights[i] * abs(norm_features.get(target)[i] - norm_features.get(image)[i]) for i in range(89)))
+        # print(image, summed)
+        relevance.append((image, summed))
     # Gets the manhattan distance between the target and the image
     return relevance
     # Gets the manhattan distance between the target and the image
+
+def update_weight(images):
+    """Calculated updated weight for distance of images
+
+    Args:
+        *image ([string]): The images to be unpacked from args
+
+    Returns:
+        updated_weight int: The weight for RF
+    """
+    print('in update_weight', images)
+    norm_features = session.get('normalized_features')
+    std_matrix = [0 for _ in range(89)]
+    updated_weight = [0 for _ in range(89)]
+    # Calculates the updated weight using the standard deviation of all the checked images
+    # Then divide the std of the images under 1/{std} and repeat with all the features
+    # Add all the updated weights in the individual normalized feature matrix
+    # Normalized updated weight = {updated weight} / {sum of all updated weights}
+    for i in range(89):
+        # group the column features of each normalized feature
+        feature_n = [norm_features[image][i] for image in images]
+        print(feature_n)
+        std_matrix[i] = np.std(feature_n)
+        if std_matrix[i] == 0:
+            updated_weight[i] = 0 # TODO Do special case
+        else:
+            updated_weight[i] = 1/std_matrix[i]
+    summed = sum(updated_weight)
+    normalized_weight = [std / summed for std in updated_weight]
+    return normalized_weight
+
 
 
 def set_features(CcBin, Inbin, imSize):

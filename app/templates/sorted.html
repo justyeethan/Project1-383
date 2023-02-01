@@ -1,12 +1,6 @@
 {% extends 'index.html' %}
 {% block heading %}
   {{pagination.links}}
-  <a href="{{ url_for('results', filename='images?'+target) }}" class="card">
-    <h4 class="title is-4">Update Relevance</h4>
-  </a>
-  <a href="{{ url_for('clear_relevance', filename='images?'+target) }}" class="card">
-    <h4 class="title is-4">Clear Relevance</h4>
-  </a>
 {% endblock %}
 {% block changeOrder %}
 <!-- Loops through images -->
@@ -17,7 +11,6 @@
   >
     <img class="image" src="{{ url_for('static', filename=image) }}" alt="beep" />
     <h4 class="title is-4">{{image.split('/')[1]}}</h4>
-    <input class="checkbox" type="checkbox" id="{{image.split('/')[1]}}" />
   </a>
 {% endfor %}
 {% endblock %}
