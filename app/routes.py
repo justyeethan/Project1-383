@@ -209,16 +209,16 @@ def get_relevance_feedback(filename):
         rf.html (HTML): HTML template for relevance feedback
     """
     filename = filename.replace('?', '/')
-    # relevance_images = session.get('relevance_images', None)
-    # weight = 0
-    # if relevance_images is not None:
-    #     # print('in relevance', session.get('relevance_images'))
-    #     weight = update_weight(relevance_images)
-    #     print(weight)
-    # else:
-    #     weight = [1/7 for _ in range(89)]
-    res = calculate_relevance(filename.split('/')[1], [1/7 for _ in range(89)]) # target, weight
-    final_list = [f'images/{img[0]}' for img in sorted(res, key=lambda x: x[1])]
+    relevance_images = session.get('relevance_images')
+    weight = [1/7 for _ in range(89)]
+    if relevance_images != []:
+        # print('in relevance', session.get('relevance_images'))
+        weight = update_weight(relevance_images)
+        print(weight)
+    res = calculate_relevance(filename.split('/')[1], weight)  # target, weight
+    final_list = [
+        f'images/{img[0]}' for img in sorted(res, key=lambda x: x[1])]
+
     def get_page_image(offset=0, per_page=20):
         return final_list[offset: offset + per_page]
     page = int(request.args.get('page', 1))
@@ -374,12 +374,14 @@ def calculate_relevance(target, weights):
     images = norm_features.keys()
     # print(norm_features)
     for image in norm_features.keys():
-        summed = (sum(weights[i] * abs(norm_features.get(target)[i] - norm_features.get(image)[i]) for i in range(89)))
+        summed = (sum(weights[i] * abs(norm_features.get(target)
+                  [i] - norm_features.get(image)[i]) for i in range(89)))
         # print(image, summed)
         relevance.append((image, summed))
     # Gets the manhattan distance between the target and the image
     return relevance
     # Gets the manhattan distance between the target and the image
+
 
 def update_weight(images):
     """Calculated updated weight for distance of images
@@ -401,16 +403,34 @@ def update_weight(images):
     for i in range(89):
         # group the column features of each normalized feature
         feature_n = [norm_features[image][i] for image in images]
-        print(feature_n)
+        # print('feature n', feature_n)
         std_matrix[i] = np.std(feature_n)
+        # print(std_matrix[i])
+        # Checks the special case
         if std_matrix[i] == 0:
-            updated_weight[i] = 0 # TODO Do special case
+            # Grabs mean of i (the feature)
+            meanVal = sum(feature_n) / len(feature_n)
+            # print('meanval', meanVal)
+            if meanVal == 0:
+                # If mean value is 0, set the updated weight to be 0
+                updated_weight[i] = 0
+            else:
+                # The original std is replaced with equation
+                revised_std = (
+                    0.5 * min([std for std in std_matrix if std != 0]))
+                updated_weight[i] = 1 / revised_std
+        else:  # Regular Case, calculate updated weight with 1/std
+            updated_weight[i] = 1 / std_matrix[i]
+    summed = sum(updated_weight)  # For norm_weight
+    normalized_weight = []
+    for std in updated_weight:
+        if std == 0:
+            normalized_weight.append(0)
         else:
-            updated_weight[i] = 1/std_matrix[i]
-    summed = sum(updated_weight)
-    normalized_weight = [std / summed for std in updated_weight]
+            normalized_weight.append(std/summed)
+    # normalized_weight = [std / summed for std in updated_weight if std != 0]
+    # print(len(normalized_weight))
     return normalized_weight
-
 
 
 def set_features(CcBin, Inbin, imSize):
