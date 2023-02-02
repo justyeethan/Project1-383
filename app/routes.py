@@ -214,10 +214,12 @@ def get_relevance_feedback(filename):
     if relevance_images != []:
         # print('in relevance', session.get('relevance_images'))
         weight = update_weight(relevance_images)
-        print(weight)
+        # print(weight)
     res = calculate_relevance(filename.split('/')[1], weight)  # target, weight
+    print(res)
     final_list = [
         f'images/{img[0]}' for img in sorted(res, key=lambda x: x[1])]
+
 
     def get_page_image(offset=0, per_page=20):
         return final_list[offset: offset + per_page]
@@ -401,10 +403,15 @@ def update_weight(images):
     # Add all the updated weights in the individual normalized feature matrix
     # Normalized updated weight = {updated weight} / {sum of all updated weights}
     for i in range(89):
-        # group the column features of each normalized feature
         feature_n = [norm_features[image][i] for image in images]
         # print('feature n', feature_n)
-        std_matrix[i] = np.std(feature_n)
+        std_matrix[i] = np.std(feature_n) # Calculate all stds first pass
+    # Loop to calculate actual weight after all features information is calculated
+    for i in range(89):
+        # group the column features of each normalized feature
+        # feature_n = [norm_features[image][i] for image in images]
+        # print('feature n', feature_n)
+        # std_matrix[i] = np.std(feature_n)
         # print(std_matrix[i])
         # Checks the special case
         if std_matrix[i] == 0:
