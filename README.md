@@ -1,13 +1,10 @@
-# CBIR System, Ethan Yee, CSS 484
+# Mutation Detection and visualizer | CSS 383
 
 ## Description
-This is a simple CBIR system that uses a bag of words model to compare images. I created it from scratch using Python and Flask.
-
+This is a simple mutation detection project for CSS 383, Bioinformatics. This can simulate the radiation dosage, and provide more information on how to treat the patient. This is a simple web application that uses Flask, and a few other libraries to run.
 Here is documentation on setup and usage.
 
 # Easy Viewing
-
-! I have the application hosted on a server, so you can just go to https://cbir-flask.vercel.app/ to use the application quickly.
 
 It should take a few milliseconds at first to fetch all the images, but after that, it should cache the website and run normally depending on your internet connection.
 
@@ -42,6 +39,4 @@ It should take a few milliseconds at first to fetch all the images, but after th
 5.  Open the browser and navigate to the link provided in the terminal, should be http://127.0.0.1:5000/
 
 6.  Wait for the application to load (it should take a few seconds, but after, it will cache all the images and their features to cookies, and it will run normally)
-
-## Using the application
 
