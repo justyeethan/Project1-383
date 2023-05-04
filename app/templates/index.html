@@ -1,25 +1,13 @@
 {% extends 'base.html' %}
 {% block content %}
   <div class="center">
-    <h1 class="title is-2">Content-Based Image Retrieval System</h1>
-    <h2 class="title is-3">By Ethan Yee</h2>
-    <h4 class="title is-4">CSS 484 | Wi</h4>
+    <h1 class="title is-2">Mutation Detector</h1>
+    <h2 class="title is-3">By Ethan, Joyce, Foziya</h2>
+    <h4 class="title is-4">BBIO 383 | Spr</h4>
   </div>
   <!-- Pagination links -->
-  {% block heading %}
-  {{pagination.links}}
-  {% endblock %}
   <div class="grid">
-    {% block changeOrder %}
-      <!-- Loops through all the images inside of the order -->
-      {% for image in images %}
-        <a href="{{ url_for('show_image', image_name=image.split('/')[1] ) }}" class="card">
-          <img class="image" src="{{ url_for('static', filename=image) }}" alt="beep">
-          <h4 class="title is-4">{{image.split('/')[1]}}</h4>
-        </a>
-      {% endfor %}
-    {% endblock changeOrder %}
+    <h2>Search for a gene</h2>
   </div>
   <!-- Pagination links -->
-  {{pagination.links}}
 {% endblock %}
