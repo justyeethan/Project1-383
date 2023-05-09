@@ -1,13 +1,34 @@
-{% extends 'base.html' %}
-{% block content %}
-  <div class="center">
-    <h1 class="title is-2">Mutation Detector</h1>
-    <h2 class="title is-3">By Ethan, Joyce, Foziya</h2>
-    <h4 class="title is-4">BBIO 383 | Spr</h4>
+{% extends 'base.html' %} {% block content %}
+<div class="center">
+  <h1 class="title is-2">Mutation Detector</h1>
+  <h2 class="title is-3">By Ethan, Joyce, Foziya</h2>
+  <h4 class="title is-4">BBIO 383 | Spr</h4>
+  {% if error %}
+    <h2 style="color: red">{{ error }}</h2>
+  {% endif %}
+</div>
+<!-- Pagination links -->
+<div class="grid">
+  <h2>Search for a gene</h2>
+  <form action="{{ url_for('parseSequence') }}" method='post'>
+    <input type="text" required name="gene" placeholder="Enter a gene sequence" />
+    <h3>Radiation</h3>
+    <input
+      type="text"
+      value="50"
+      placeholder='Enter a radiation dose'
+    />
+    <input type="submit" value="Search" />
+  </form>
+  <div>
+    {% if results %}
+      <h2>Results</h2>
+      <h3>Initial sequence: {{initial}}</h3>
+      <h3>New sequence: {{results}}</h3>
+    {% else %}
+      <h2>No results</h2>
+    {% endif %}
   </div>
-  <!-- Pagination links -->
-  <div class="grid">
-    <h2>Search for a gene</h2>
-  </div>
-  <!-- Pagination links -->
+</div>
+<!-- Pagination links -->
 {% endblock %}
