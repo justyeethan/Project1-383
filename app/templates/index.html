@@ -4,13 +4,14 @@
   <h2 class="title is-3">By Ethan, Joyce, Foziya</h2>
   <h4 class="title is-4">BBIO 383 | Spr</h4>
   {% if error %}
-    <h2 style="color: red">{{ error }}</h2>
+    <h2 style="color: red; font-weight: bold;">{{ error }}</h2>
   {% endif %}
 </div>
 <!-- Pagination links -->
 <div class="grid">
-  <h2>Search for a gene</h2>
+  <h1 style="font-size: 20px; font-weight: bold">Search for a gene</h1>
   <form action="{{ url_for('parseSequence') }}" method='post'>
+    <h3>Gene</h3>
     <input type="text" required name="gene" placeholder="Enter a gene sequence" />
     <h3>Radiation</h3>
     <input
