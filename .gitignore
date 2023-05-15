@@ -9,3 +9,5 @@ app/__pycache__/
 *.pdf
 flask_session/
 __pycache__/
+stats.txt
+.ipynb_checkpoints
